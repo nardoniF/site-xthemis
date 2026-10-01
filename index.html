@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>xThemis</title>
+  <link rel="alternate" hreflang="pt-BR" href="https://www.xthemis.com.br/" />
+  <link rel="alternate" hreflang="en" href="https://www.xthemis.com/" />
+  <link rel="alternate" hreflang="x-default" href="https://www.xthemis.com.br/" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="ambiance" aria-hidden="true"></div>
+
+  <div class="shell">
+    <aside class="rail">
+      <div class="brand">
+        <img class="brand-logo" src="logo-xthemis.png" alt="xThemis Legal Intelligence" />
+        <h1 class="sr-only">xThemis</h1>
+        <p class="brand-sub" id="brand-sub">Processos em PDF → peças em Word e PDF</p>
+      </div>
+      <div class="rail-tools">
+        <button type="button" id="btn-tema" class="ghost">Modo claro</button>
+        <select id="idioma" aria-label="Idioma">
+          <option value="pt">PT</option>
+          <option value="en">EN</option>
+          <option value="es">ES</option>
+        </select>
+        <button type="button" id="btn-conta" class="ghost">Entrar</button>
+      </div>
+
+      <label class="dropzone" id="dropzone" for="pdf">
+        <span class="drop-icon" aria-hidden="true"></span>
+        <strong>Anexar PDF do processo</strong>
+        <span>Copia pra pasta do caso · vira o único <em>processo.pdf</em></span>
+        <input id="pdf" type="file" accept="application/pdf,.pdf" />
+      </label>
+      <p id="import-status" class="status-line" role="status"></p>
+
+      <div class="rail-head">
+        <h2>Processos</h2>
+        <input id="busca-casos" type="search" placeholder="Buscar…" autocomplete="off" />
+      </div>
+      <div id="lista" class="lista"></div>
+
+      <div class="rail-foot">
+        <button type="button" id="btn-ajustes" class="ghost block">Ajustes da IA</button>
+        <p id="pasta-mini" class="micro"></p>
+      </div>
+    </aside>
+
+    <main class="stage">
+      <header class="stage-top">
+        <div>
+          <p class="eyebrow" id="stage-eyebrow">Selecione ou importe um processo</p>
+          <h2 id="caso-titulo">Nenhum caso ativo</h2>
+          <p id="caso-atual" class="muted"></p>
+        </div>
+        <div class="stage-actions" id="stage-actions" hidden>
+          <label class="ghost file-inline" for="pdf-update">
+            Atualizar processo
+            <input id="pdf-update" type="file" accept="application/pdf,.pdf" hidden />
+          </label>
+          <label class="ghost file-inline" for="pdf-juntar">
+            Juntar páginas novas
+            <input id="pdf-juntar" type="file" accept="application/pdf,.pdf" hidden />
+          </label>
+          <button type="button" id="btn-whatsapp" class="ghost">WhatsApp</button>
+          <button type="button" id="btn-segredo" class="ghost">Segredo</button>
+          <button type="button" id="btn-excluir" class="ghost">Excluir processo</button>
+          <button type="button" id="btn-pasta" class="ghost">Backup (ZIP)</button>
+          <button type="button" id="btn-ver-prompts" class="ghost">Prompts</button>
+        </div>
+      </header>
+
+      <section class="empty-state" id="empty-state">
+        <p class="empty-kicker">Como funciona</p>
+        <h3>Um processo. Uma peça por ação.</h3>
+        <p>
+          Anexe o PDF: o xThemis cria a pasta e grava <strong>processo.pdf</strong> (só um).
+          Cada ação (recurso, contestação…) vira <strong>um Word + um PDF</strong> com nome fixo.
+          Enquanto você refina (“faltou X”), ele <strong>sobrepoe</strong> a mesma peça — sem v1/v2.
+          Quando o tribunal atualizar os autos, use <strong>Atualizar processo</strong> e o PDF principal é substituído.
+        </p>
+      </section>
+
+      <section class="workspace" id="acoes-wrap" hidden>
+        <div class="panel dialogue">
+          <div class="panel-head">
+            <h3>Diálogo com a IA</h3>
+            <label class="switch">
+              <input type="checkbox" id="salvar-aprendizado" checked />
+              <span>Guardar aprendizado</span>
+            </label>
+          </div>
+          <div class="contexto-row">
+            <label>Posição
+              <select id="persona">
+                <option value="reclamada">Reclamada</option>
+                <option value="reclamante">Reclamante</option>
+                <option value="juizo">Juízo</option>
+              </select>
+            </label>
+            <label>Área
+              <select id="area">
+                <option value="trabalhista">Trabalhista</option>
+                <option value="civel">Cível</option>
+                <option value="previdenciario">Previdenciário</option>
+                <option value="familia">Família</option>
+              </select>
+            </label>
+          </div>
+          <div class="prazo-box">
+            <p class="micro">Prazo em dias úteis, com a Portaria GP nº 50/2025 do TRT-2 em 2026. Confira no PJe — isto não certifica tempestividade.</p>
+            <div class="contexto-row">
+              <label>Data no PJe
+                <input id="prazo-data" type="date" />
+              </label>
+              <label>Essa data é
+                <select id="prazo-modo">
+                  <option value="ciencia">Ciência (abriu nesse dia)</option>
+                  <option value="envio">Envio (não abriu; ciência no 10º dia corrido)</option>
+                </select>
+              </label>
+              <label>Peça
+                <select id="prazo-tipo">
+                  <option value="recurso">Recurso ordinário · 8 dias úteis</option>
+                  <option value="embargos">Embargos de declaração · 5</option>
+                  <option value="contrarrazoes">Contrarrazões · 8</option>
+                  <option value="agravo">Agravo de petição · 8</option>
+                  <option value="agravo_instrumento">Agravo de instrumento · 8</option>
+                  <option value="revista">Recurso de revista · 8</option>
+                  <option value="embargos_execucao">Embargos à execução · 5</option>
+                  <option value="outro">Outro</option>
+                </select>
+              </label>
+              <label>Calendário
+                <select id="prazo-comarca">
+                  <option value="cotia">1ª Vara de Cotia</option>
+                  <option value="regional">Toda a 2ª Região</option>
+                  <option value="saopaulo">São Paulo (sede)</option>
+                </select>
+              </label>
+            </div>
+            <div class="toolbar">
+              <label id="prazo-outro-wrap" hidden>Dias úteis
+                <input id="prazo-dias" type="number" min="1" max="60" value="8" />
+              </label>
+              <button type="button" id="btn-prazo" class="ghost">Calcular prazo</button>
+            </div>
+            <p id="prazo-resultado" class="prazo-resultado" hidden></p>
+            <input id="prazo" type="hidden" />
+          </div>
+          <div class="chips" id="prompt-chips">
+            <button type="button" data-prompt="Cruze férias, 13º, aviso e FGTS com o TRCT e comprovantes. Cite as folhas. Peça dedução ou compensação do que já foi pago.">Cruzar TRCT</button>
+            <button type="button" data-prompt="Impugne o laudo: aponte o que não consta dos autos, o que contradiz holerites/ponto e o que deve ser desconsiderado.">Impugnar laudo</button>
+            <button type="button" data-prompt="Revise a tempestividade, os pedidos e as folhas citadas. Se alguma folha não existir no processo, marque NÃO CONSTA.">Revisar fls.</button>
+            <button type="button" data-prompt="A peça ficou incompleta nos pedidos. Reescreva os pedidos de forma objetiva, um por linha, sem inventar valor.">Pedidos objetivos</button>
+          </div>
+          <textarea
+            id="instrucoes-extra"
+            rows="5"
+            placeholder="Ex.: Cruze férias e 13º com o TRCT fl. 677 e o comprovante bancário fl. 679. Peça dedução/compensação…"
+          ></textarea>
+          <div class="toolbar">
+            <button type="button" id="btn-refinar" class="accent">Refinar esta peça (sobrepoe)</button>
+            <button type="button" id="btn-fechar" class="ghost">Peça fechada</button>
+            <button type="button" id="btn-conferir-sumulas" class="ghost">Conferir jurisprudência</button>
+            <p class="hint" id="peca-estado">Sem peça aberta. A primeira ação cria o arquivo.</p>
+          </div>
+          <div id="pje-box" class="chips"></div>
+          <div id="reabrir-box" class="chips"></div>
+          <div id="prompts-box" class="prompts-box" hidden></div>
+        </div>
+
+        <div class="panel indice-panel" id="camadas-wrap">
+          <div class="panel-head">
+            <h3>Resumo em camadas</h3>
+            <div class="chips" id="camadas-tabs">
+              <button type="button" data-camada="capa">Capa</button>
+              <button type="button" data-camada="sentenca">Sentença</button>
+              <button type="button" data-camada="provas">Provas</button>
+              <button type="button" data-camada="leitura">Leitura</button>
+            </div>
+          </div>
+          <pre id="camadas-texto" class="camadas-texto"></pre>
+        </div>
+
+        <div class="panel indice-panel" id="indice-wrap">
+          <div class="panel-head">
+            <h3>Índice dos autos</h3>
+            <p id="indice-meta" class="micro"></p>
+          </div>
+          <div id="indice-lista" class="indice-lista"></div>
+          <p id="fls-alerta" class="fls-alerta" hidden></p>
+        </div>
+
+        <div class="panel" id="extrato-wrap">
+          <div class="panel-head">
+            <h3>Extrato do processo</h3>
+            <button type="button" id="btn-salvar-extrato" class="ghost">Salvar extrato</button>
+          </div>
+          <p class="micro">A advogada corrige. O cruzamento é heurístico: condenação e pagamento com as mesmas palavras nas folhas.</p>
+          <div class="extrato-grid">
+            <label>Número<input id="ex-numero" type="text" /></label>
+            <label>Autuação<input id="ex-autuacao" type="text" /></label>
+            <label>Valor da causa<input id="ex-valor" type="text" /></label>
+            <label>Reclamante<input id="ex-reclamante" type="text" /></label>
+            <label class="span2">Reclamada<input id="ex-reclamado" type="text" /></label>
+          </div>
+          <div class="table-wrap">
+            <table class="cruzamento" id="cruzamento">
+              <thead>
+                <tr>
+                  <th>Verba</th>
+                  <th>Condenado</th>
+                  <th>Pago</th>
+                  <th>Fls. sentença</th>
+                  <th>Fls. pago</th>
+                  <th>Tese</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="panel actions">
+          <h3>Gerar peça</h3>
+          <div class="action-groups">
+            <div>
+              <p class="group-label">Análise</p>
+              <div class="action-grid">
+                <button data-tipo="resumo" data-modo="chat">Resumo</button>
+                <button data-tipo="jurisprudencia" data-modo="chat">Jurisprudência</button>
+              </div>
+            </div>
+            <div>
+              <p class="group-label">Peças principais</p>
+              <div class="action-grid primary">
+                <button data-tipo="defesa" data-modo="arquivos" class="direct">Contestação</button>
+                <button data-tipo="replica" data-modo="arquivos" class="direct">Réplica</button>
+                <button data-tipo="recurso" data-modo="arquivos" class="direct">Recurso ordinário</button>
+                <button data-tipo="contrarrazoes" data-modo="arquivos" class="direct">Contrarrazões</button>
+              </div>
+            </div>
+            <div>
+              <p class="group-label">Outras fases</p>
+              <div class="action-grid dense">
+                <button data-tipo="alegacoes_finais" data-modo="arquivos" class="direct">Alegações finais</button>
+                <button data-tipo="embargos" data-modo="arquivos" class="direct">Embargos</button>
+                <button data-tipo="impugnacao_laudo" data-modo="arquivos" class="direct">Impug. laudo</button>
+                <button data-tipo="impugnacao_calculos" data-modo="arquivos" class="direct">Impug. cálculos</button>
+                <button data-tipo="manifestacao" data-modo="arquivos" class="direct">Manifestação</button>
+                <button data-tipo="peticao" data-modo="arquivos" class="direct">Petição</button>
+                <button data-tipo="acordo" data-modo="arquivos" class="direct">Acordo</button>
+                <button data-tipo="personalizado" data-modo="arquivos" class="direct wide">Pedido personalizado</button>
+              </div>
+            </div>
+            <div>
+              <p class="group-label">Execução e recursos</p>
+              <div class="action-grid dense">
+                <button data-tipo="tutela" data-modo="arquivos" class="direct">Tutela de urgência</button>
+                <button data-tipo="execucao" data-modo="arquivos" class="direct">Execução</button>
+                <button data-tipo="embargos_execucao" data-modo="arquivos" class="direct">Embargos à execução</button>
+                <button data-tipo="agravo_peticao" data-modo="arquivos" class="direct">Agravo de petição</button>
+                <button data-tipo="agravo_instrumento" data-modo="arquivos" class="direct">Agravo de instrumento</button>
+                <button data-tipo="revista" data-modo="arquivos" class="direct">Recurso de revista</button>
+                <button data-tipo="quesitos" data-modo="arquivos" class="direct">Quesitos</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel result" id="chat-wrap" hidden>
+          <div class="panel-head">
+            <div>
+              <p class="group-label">Prévia</p>
+              <h3 id="chat-titulo">Resultado</h3>
+              <p id="metrics-line" class="micro"></p>
+              <p id="sugestao-proxima" class="micro"></p>
+              <p id="risco-acordo" class="micro"></p>
+              <p id="juris-avisos" class="fls-alerta" hidden></p>
+            </div>
+            <button type="button" id="btn-salvar" class="ghost">Regravar Word + PDF</button>
+          </div>
+          <div id="juris-lista" class="juris-lista"></div>
+          <p id="arquivos-gerados" class="file-chips"></p>
+
+          <div id="checklist-wrap" class="checklist-wrap" hidden>
+            <p class="group-label">Checklist forense</p>
+            <ul id="checklist" class="checklist"></ul>
+          </div>
+
+          <div id="diff-wrap" class="diff-wrap" hidden>
+            <div class="diff-head">
+              <p class="group-label">Diff do refine</p>
+              <button type="button" id="btn-toggle-diff" class="ghost">Ocultar diff</button>
+            </div>
+            <div class="diff-cols">
+              <div>
+                <p class="micro">Antes</p>
+                <pre id="diff-before" class="diff-pane"></pre>
+              </div>
+              <div>
+                <p class="micro">Depois</p>
+                <pre id="diff-after" class="diff-pane"></pre>
+              </div>
+            </div>
+          </div>
+
+          <article id="chat" class="preview"></article>
+        </div>
+      </section>
+    </main>
+    <p class="disclaimer" id="disclaimer">xThemis é assistente de redação. Não é advogado, não protocola e não garante prazo, jurisprudência nem resultado.</p>
+  </div>
+
+  <div id="toast" class="toast" hidden></div>
+  <div id="busy" class="busy" hidden>
+    <div class="busy-card">
+      <div class="spinner" aria-hidden="true"></div>
+      <p id="busy-text">Gerando…</p>
+      <ol id="busy-steps" class="busy-steps" aria-live="polite"></ol>
+    </div>
+  </div>
+
+  <dialog id="ajustes">
+    <form method="dialog" id="form-ajustes">
+      <h2>Ajustes</h2>
+      <p class="muted">Para peça séria: <strong>Gemini Pro</strong> ou <strong>OpenAI</strong>. Groq é grátis para teste.</p>
+      <label>Plano de IA
+        <select id="preset">
+          <option value="google_pro">Gemini Pro — qualidade (pago, recomendado)</option>
+          <option value="openai_mini">OpenAI GPT-4.1 mini — pago</option>
+          <option value="google_flash">Gemini Flash — rápido</option>
+          <option value="groq_free">Groq — gratuito (teste)</option>
+          <option value="google_lite">Gemini Flash-Lite</option>
+        </select>
+      </label>
+      <label>Chave da API
+        <input id="api-key" type="password" autocomplete="off" placeholder="AIza... / sk-... / gsk_..." />
+      </label>
+      <label>Escritório
+        <input id="escritorio" type="text" placeholder="Nome do escritório" />
+      </label>
+      <label>Advogada
+        <input id="advogada" type="text" placeholder="Nome na capa do PDF" />
+      </label>
+      <label>OAB
+        <input id="oab" type="text" placeholder="OAB/SP 000000" />
+      </label>
+      <div id="convidados-box">
+        <h3>Convidados</h3>
+        <p class="muted micro">Acesso gratuito para quem você incluir aqui. Os demais, quando a cobrança existir, pagam por ação: cada peça nova é uma. Refinar a mesma peça não cobra de novo.</p>
+        <ul id="convidados-lista" class="convidados-lista"></ul>
+        <label>Nome do advogado
+          <input id="convidado-nome" type="text" placeholder="Nome como vai entrar na conta" />
+        </label>
+        <label>Nota
+          <input id="convidado-nota" type="text" placeholder="OAB, escritório" />
+        </label>
+        <button type="button" id="btn-convidado" class="ghost">Incluir na lista gratuita</button>
+      </div>
+        <p class="muted micro">Cobrança por ação ainda não está ligada. O endereço público é www.xthemis.com.br. O servidor gratuito dorme sem visita e acorda no próximo acesso.</p>
+        <h3>Guarda dos arquivos</h3>
+        <p class="muted micro">O PDF fica na pasta deste xThemis até você excluir o processo. A exclusão fica registrada fora da pasta, com data e número, sem cópia do PDF.</p>
+        <ul id="exclusoes-lista" class="convidados-lista"></ul>
+      <label>Modelo (avançado)
+        <input id="api-model" type="text" />
+      </label>
+      <p id="custo-info" class="muted micro"></p>
+      <p id="pasta-info" class="muted micro"></p>
+      <menu>
+        <button value="cancel" class="ghost">Fechar</button>
+        <button id="salvar-ajustes" value="default" class="accent">Salvar</button>
+      </menu>
+    </form>
+  </dialog>
+
+  <dialog id="login">
+    <form id="form-login">
+      <h2>Entrar</h2>
+      <p class="muted">A primeira conta vira a advogada deste xThemis. Cada uma vê os processos dela.</p>
+      <label>Nome<input id="login-nome" type="text" autocomplete="username" required /></label>
+      <label>Senha<input id="login-senha" type="password" autocomplete="current-password" minlength="4" required /></label>
+      <label class="switch"><input type="checkbox" id="login-criar" /> <span>Criar esta conta</span></label>
+      <menu>
+        <button type="button" id="login-fechar" class="ghost" value="cancel">Agora não</button>
+        <button type="submit" class="accent">Entrar</button>
+      </menu>
+    </form>
+  </dialog>
+
+  <dialog id="onboarding">
+    <form id="form-onb">
+      <p class="eyebrow" id="onb-kicker">1 de 3</p>
+      <h2 id="onb-title">Quem vai usar</h2>
+      <div id="onb-1">
+        <label>Nome<input id="onb-nome" type="text" /></label>
+        <label>Senha<input id="onb-senha" type="password" minlength="4" /></label>
+      </div>
+      <p id="onb-2" hidden>Anexe o PDF completo do processo. O xThemis cria uma pasta e grava um único processo.pdf.</p>
+      <p id="onb-3" hidden>Escolha a peça (contestação, recurso…). Enquanto estiver aberta, use Refinar. Feche quando for protocolar.</p>
+      <menu>
+        <button type="button" id="onb-pular" class="ghost">Pular</button>
+        <button type="button" id="onb-next" class="accent">Continuar</button>
+      </menu>
+    </form>
+  </dialog>
+
+  <dialog id="folha">
+    <form method="dialog">
+      <h2 id="folha-titulo">Folha</h2>
+      <pre id="folha-trecho" class="camadas-texto"></pre>
+      <menu><button value="cancel" class="ghost">Fechar</button></menu>
+    </form>
+  </dialog>
+
+  <script src="config.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
