@@ -1,0 +1,12 @@
+name = "xthemis-com-proxy"
+main = "xthemis-com-proxy.js"
+compatibility_date = "2024-11-01"
+workers_dev = true
+
+[[routes]]
+pattern = "www.xthemis.com/*"
+zone_name = "xthemis.com"
+
+[[routes]]
+pattern = "xthemis.com/*"
+zone_name = "xthemis.com"
