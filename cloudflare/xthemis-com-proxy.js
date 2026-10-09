@@ -3,7 +3,7 @@
  * GitHub Pages only accepts one custom domain and would send .com to .com.br.
  * Files come from the pinned commit on jsDelivr.
  */
-const COMMIT = "09d8aac3771f288412d1f7f0493e44df61e7e1f4";
+const COMMIT = "d895218b22606c9ffa46fc565fc15cdee34c4967";
 const ORIGIN = "https://cdn.jsdelivr.net/gh/nardoniF/site-xthemis@" + COMMIT;
 
 function filePath(pathname) {
